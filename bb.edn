@@ -1,0 +1,35 @@
+; This file is meant to be used with `bb tasks`
+; See https://book.babashka.org/ for more, or just copy-paste the commands out of here
+
+{
+ ; The sqlite Python pod and the task that uses it below is adapted from
+ ; https://github.com/babashka/pods/tree/master/examples/pod-lispyclouds-sqlite
+ ; Released under the Eclipse Public License 1.0
+ ; Note, the key ('pod-...) doesn't matter for a pod from a :path
+
+ :pods {'pod-lispyclouds-sqlite {:path "./pod-lispyclouds-sqlite.py"}}
+
+ :tasks
+ {
+  :requires ([clojure.java.io :as io]
+             [clojure.string :as string]
+             [selmer.parser :refer [<<]]
+             [pod.lispyclouds.sqlite :as sqlite]
+             )
+  :init (do
+          (def wd (.getAbsolutePath (io/file "")))
+          )
+
+  ; Simple helpers for inspecting bb operations
+  pwd (println wd)
+  cli (println (string/join "\n" *command-line-args*))
+
+  ; The filename for the db is specified in the Python pod
+  lispy-sqlite (do
+                 (sqlite/execute! "create table if not exists foo ( int foo )")
+                 (sqlite/execute! "delete from foo")
+                 (sqlite/execute! "insert into foo values (1), (2)")
+                 ; Note that unlike a babashka script, we don't get output by default in a task, so
+                 ; we need the (println)
+                 (println (sqlite/execute! "select * from foo")) ) ;;=> ([1] [2])
+ }}
